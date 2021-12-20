@@ -7,35 +7,66 @@ from simphony.simulation import Detector, DifferentialDetector, Laser, Simulatio
 
 
 def mz_laser_ps(long, short):
-    gc_input = siepic.GratingCoupler()
-    y_splitter = siepic.YBranch()
+    gc_input1 = siepic.GratingCoupler()
+    gc_input2 = siepic.GratingCoupler()
+
+    dc_1 = siepic.DirectionalCoupler()
     wg_long = siepic.Waveguide(long)
     wg_short = siepic.Waveguide(short)
-    y_recombiner = siepic.YBranch()
-    gc_output = siepic.GratingCoupler()
+    dc_2 = siepic.DirectionalCoupler()
+    gc_output1 = siepic.GratingCoupler()
+    gc_output2 = siepic.GratingCoupler()
 
     # next we connect the components to each other
     # you can connect pins directly:
-    y_splitter["pin1"].connect(gc_input["pin1"])
+    #y_splitter["pin1"].connect(gc_input["pin1"])
+
+    #wg_long.multiconnect(gc_input, dc_1["pin1"])
+    #wg_short.multiconnect(in2, dc1)
+    dc_1["pin1"].connect(gc_input1["pin1"])
+    dc_1["pin2"].connect(gc_input2["pin2"])
 
     # or connect components with components:
     # (when using components to make connections, their first unconnected pin will
     # be used to make the connection.)
-    y_splitter.connect(wg_long)
+    #y_splitter.connect(wg_long)
+    dc_1["pin3"].connect(wg_long)
+    dc_1["pin4"].connect(wg_short)
 
     # or any combination of the two:
-    y_splitter["pin3"].connect(wg_short)
+    #y_splitter["pin3"].connect(wg_short)
     # y_splitter.connect(wg_short["pin1"])
 
     # when making multiple connections, it is often simpler to use `multiconnect`
     # multiconnect accepts components, pins, and None
     # if None is passed in, the corresponding pin is skipped
-    y_recombiner.multiconnect(gc_output, wg_short, wg_long)
+    #y_recombiner.multiconnect(gc_output, wg_short, wg_long)
+
+    # next we connect the components to each other
+    # you can connect pins directly:
+    #y_splitter["pin1"].connect(gc_input["pin1"])
+    dc_2["pin1"].connect(wg_long)
+    dc_2["pin2"].connect(wg_short)
+
+    # or connect components with components:
+    # (when using components to make connections, their first unconnected pin will
+    # be used to make the connection.)
+    #y_splitter.connect(wg_long)
+    dc_2["pin3"].connect(wg_long)
+    dc_2["pin4"].connect(wg_short)
+
     with Simulation() as sim:
-        l = Laser(wl=1550e-9).powersweep(1e-3, 100e-3).connect(gc_input)
-        Detector().connect(gc_output)
+        l = Laser(wl=1550e-9).powersweep(1e-3, 100e-3).connect(gc_input1)
+        l2 = Laser(wl=1550e-9).powersweep(1e-3, 100e-3).connect(gc_input2)
+        #Detector().connect(gc_input1)
+        Detector().multiconnect(gc_output1, gc_output2)
+        Detector()
         data = sim.sample()
         # print("data: ", data[])
+
+        with Simulation() as sim2:
+            
+        
         return data
 
 power_outs = []
@@ -87,5 +118,3 @@ plt.figure(3)
 plt.plot(n_s, np.sqrt(power_outs))
 plt.title("amplitude scale vs. integer value of delta_L/lambda (including half integer)")
 plt.show()
-
-
